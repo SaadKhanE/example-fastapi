@@ -21,7 +21,7 @@ def get_posts(db: Session = Depends(get_db), current_user: int = Depends(oauth2.
 
     return results
 
-@router.post("/createPosts", response_model = schemas.PostResponse)
+@router.post("/createPosts", response_model = schemas.PostResponse, status_code=status.HTTP_201_CREATED)
 def create_posts(post: schemas.PostCreate, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
     new_post = models.Post(owner_id = current_user.id, **post.dict())
     db.add(new_post)
@@ -31,17 +31,23 @@ def create_posts(post: schemas.PostCreate, db: Session = Depends(get_db), curren
 
     return new_post
 
-@router.get("/posts/{id}")
+@router.get("/posts/{id}", response_model=schemas.PostOut)
 def get_1_post(id: str, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
-    post = db.query(models.Post).filter(models.Post.id == id).first()
-    
+    post = db.query(models.Post, func.count(models.Vote.post_id).label("vote")).join(
+        models.Vote, models.Vote.post_id == models.Post.id, isouter=True).group_by(models.Post.id).filter(models.Post.id == id).first()
+
     if not post:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"The post with id: {id} was not found"
         )
 
-    return {"Post detail": post}
+    post_, vote_count = post
+
+    return {
+        "Post": post_,
+        "vote": vote_count
+    }
 
 @router.delete("/delete/{id}")
 def delete_post(id: str, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
