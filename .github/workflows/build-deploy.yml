@@ -2,7 +2,7 @@ name: Build and Deploy Code
 on: [push, pull_request]
 
 jobs:
-  job1:
+  build:
     environment: 
       name: testing
     env:
@@ -45,3 +45,8 @@ jobs:
           pip install pytest
           pip install httpx
           pytest
+
+  deploy:
+    needs: [build]
+
+    
