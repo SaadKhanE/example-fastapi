@@ -6,7 +6,6 @@ from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from fastapi.security.oauth2 import OAuth2PasswordRequestForm
 
-
 router = APIRouter(tags=['Authentication'])
 
 
